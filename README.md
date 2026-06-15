@@ -31,6 +31,13 @@ Stdlib only. v0 runs static/structural checks and **cites the file:line** for ev
 chaos/replay checks are declared **NOT-RUN**, never faked. Evidence comes from code and config,
 never from a deployment's own prose claims.
 
+> **Score deployments, not the standard.** The kit scores a *wiring* of The Machine against the
+> six boxes. Pointing it at a library (e.g. the AAR signer), a web-protocol spec (e.g. AVL), or
+> **this repo itself** yields a meaningless level — those aren't deployments. This repo therefore
+> carries **no `CONFORMANCE.md`**: The Machine is the standard, not a deployment, and earns no
+> level of its own. *(v0 will score any repo handed to it; a deployment-vs-non-deployment
+> classifier is a tracked kit improvement.)*
+
 ## Conformance levels
 
 `L0 Look-Alike · L1 Declared · L2 Instrumented · L3 Enforced · L4 Receipted · L5 Trusted Autonomy`.
