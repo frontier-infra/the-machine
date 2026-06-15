@@ -1,0 +1,9 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Kit outputs (conformance packets are generated artifacts, not source)
+packets/
+
+# OS
+.DS_Store
