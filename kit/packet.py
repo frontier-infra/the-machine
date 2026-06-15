@@ -16,7 +16,35 @@ def _today() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
 
+def _render_non_deployment(s: dict) -> str:
+    """A repo with no driver loop is not a deployment — render the verdict + cited
+    evidence, never a level. Honest: show WHAT the kit looked for and why the six-box
+    ladder does not apply, instead of floor-bumping to a meaningless L1."""
+    out: list[str] = []
+    out.append(f"# Conformance packet — {s['deployment']}")
+    out.append(f"_Kit {s['kit_version']} · static/structural · {_today()} · against {s['spec']}_\n")
+    out.append("## NOT A MACHINE DEPLOYMENT")
+    out.append(f"> {s['classification_reason']}.")
+    out.append("> The six-box ladder describes a long-running agent: durable state · a deterministic "
+               "driver loop · fresh workers · verify-at-a-gate. A signing library, a web-protocol "
+               "spec, or the standard itself is not a deployment, so the kit declines to assign it a "
+               "level rather than report a meaningless 'Machine L1'. Score a *wiring* of The Machine.\n")
+    out.append("### What the kit looked for (evidence-cited)")
+    out.append("| Status | L | Obligation | Evidence |")
+    out.append("|---|---|---|---|")
+    for o, r in s["rows"]:
+        if r.status == "NOT_RUN":
+            continue
+        ev = r.evidence.replace("|", "\\|")
+        out.append(f"| {MARK[r.status]} | L{o.level} | {o.title} | {ev} |")
+    out.append("")
+    out.append("_Classification is deterministic from repo content; re-running yields the same verdict._")
+    return "\n".join(out)
+
+
 def render_packet(s: dict) -> str:
+    if not s.get("is_deployment", True):
+        return _render_non_deployment(s)
     L = s["confirmed_level"]
     out: list[str] = []
     out.append(f"# Conformance packet — {s['deployment']}")

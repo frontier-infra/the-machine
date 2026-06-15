@@ -35,9 +35,13 @@ def main(argv: list[str] | None = None) -> int:
             return 1
         s = score_repo(args.repo, args.name)
         text = render_packet(s)
-        print(f"[{s['deployment']}] confirmed level: {s['confirmed_level_name']}  "
-              f"(blockers to {s['next_level_name']}: {len(s['blockers'])}; not-run: {len(s['not_run'])})",
-              file=sys.stderr)
+        if s.get("is_deployment", True):
+            print(f"[{s['deployment']}] confirmed level: {s['confirmed_level_name']}  "
+                  f"(blockers to {s['next_level_name']}: {len(s['blockers'])}; not-run: {len(s['not_run'])})",
+                  file=sys.stderr)
+        else:
+            print(f"[{s['deployment']}] NOT A MACHINE DEPLOYMENT — {s['classification_reason']}",
+                  file=sys.stderr)
 
     if args.out:
         Path(args.out).write_text(text + "\n", encoding="utf-8")

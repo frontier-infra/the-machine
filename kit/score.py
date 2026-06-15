@@ -40,18 +40,44 @@ def _confirmed_level(rows) -> int:
     return level
 
 
+def _classify(rows) -> tuple[bool, str]:
+    """Is this repo a Machine deployment at all?
+
+    A deployment must show the irreducible signature of a long-running agent: a
+    deterministic driver loop (Box 2). A signing library, a web-protocol spec, or the
+    standard itself has no driver loop — the six-box ladder does not describe it. For
+    those the kit declines to assign a level (and refuses the L1 floor-bump) rather than
+    report a meaningless 'Machine L1'. Box 2 is the discriminator because every real
+    deployment passes it and a non-deployment cannot.
+    """
+    for o, r in rows:
+        if o.id == "box2_driver":
+            if r.status in ("PASS", "PARTIAL"):
+                return True, ""
+            return False, f"no deterministic driver loop — Box 2 {r.status} ({r.evidence})"
+    return True, ""  # box2 obligation absent from the set → don't misclassify
+
+
 def score_repo(root: str, name: str | None = None) -> dict:
     repo = RepoView(root)
     rows = _run_rows(repo)
-    level = _confirmed_level(rows)
+    is_deployment, classification_reason = _classify(rows)
+    level = _confirmed_level(rows) if is_deployment else None
 
     tally = {L: {"PASS": 0, "PARTIAL": 0, "FAIL": 0, "NOT_RUN": 0} for L in (2, 3, 4, 5)}
     for o, r in rows:
         tally.setdefault(o.level, {"PASS": 0, "PARTIAL": 0, "FAIL": 0, "NOT_RUN": 0})
         tally[o.level][r.status] = tally[o.level].get(r.status, 0) + 1
 
-    blockers = [(o, r) for (o, r) in rows
-                if o.kind == "static" and o.level == level + 1 and r.status != "PASS"]
+    if is_deployment:
+        level_name = LEVEL_NAMES[level]
+        next_name = LEVEL_NAMES.get(level + 1, "—")
+        blockers = [(o, r) for (o, r) in rows
+                    if o.kind == "static" and o.level == level + 1 and r.status != "PASS"]
+    else:
+        level_name = "NOT A MACHINE DEPLOYMENT"
+        next_name = "—"
+        blockers = []
     vnext = {o.id: (o, r) for (o, r) in rows if o.vnext}
     not_run = [(o, r) for (o, r) in rows if r.status == "NOT_RUN"]
 
@@ -60,9 +86,11 @@ def score_repo(root: str, name: str | None = None) -> dict:
         "root": str(repo.root),
         "kit_version": "v0",
         "spec": "The Machine — Conformance Spec vNext (ratified 2026-06-14)",
+        "is_deployment": is_deployment,
+        "classification_reason": classification_reason,
         "confirmed_level": level,
-        "confirmed_level_name": LEVEL_NAMES[level],
-        "next_level_name": LEVEL_NAMES.get(level + 1, "—"),
+        "confirmed_level_name": level_name,
+        "next_level_name": next_name,
         "tally": tally,
         "rows": rows,
         "vnext": vnext,
