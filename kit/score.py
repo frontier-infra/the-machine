@@ -64,8 +64,26 @@ def _classify(rows, shape: str) -> tuple[bool, str]:
     return True, ""  # keystone obligation absent from the set → don't misclassify
 
 
+def _detect_shape(repo: RepoView) -> tuple[str, bool]:
+    """Auto-pick the shape from structural signals (stdlib). A Dumb Driver (Box 2) is the stronger
+    guarantee, so it wins ties; an orchestrator-only signal ⇒ orchestrator; neither ⇒ machine (the
+    classifier then reports non-deployment). Returns (shape, ambiguous). ponytail: inherits the
+    keystone checks' heuristic limits — TS-AST-accurate auto-detect is the deferred parser phase."""
+    m = CHECKS["box2_driver"](repo).status in ("PASS", "PARTIAL")
+    o = CHECKS["orch_keystone"](repo).status in ("PASS", "PARTIAL")
+    if m and o:
+        return "machine", True        # both fire → prefer the stronger shape, but flag it
+    if o:
+        return "orchestrator", False
+    return "machine", False
+
+
 def score_repo(root: str, name: str | None = None, shape: str = "machine") -> dict:
     repo = RepoView(root)
+    detected, ambiguous = None, False
+    if shape == "auto":
+        shape, ambiguous = _detect_shape(repo)
+        detected = shape
     rows = _run_rows(repo, shape)
     is_deployment, classification_reason = _classify(rows, shape)
     level = _confirmed_level(rows) if is_deployment else None
@@ -99,6 +117,8 @@ def score_repo(root: str, name: str | None = None, shape: str = "machine") -> di
         "kit_version": "v0",
         "spec": "The Machine — Conformance Spec vNext (ratified 2026-06-14)",
         "shape": shape,
+        "detected_shape": detected,
+        "ambiguous": ambiguous,
         "is_deployment": is_deployment,
         "classification_reason": classification_reason,
         "confirmed_level": level,

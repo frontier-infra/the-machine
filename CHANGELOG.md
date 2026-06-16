@@ -12,8 +12,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com); the kit is v0/unv
   the **Orchestrator Keystone** (closed typed transitions · persist-before-effect · zero-token replay)
   in place of Box 2. Scores stamp `Machine-L*` / `Orchestrator-L*` (never bare `L*`); cross-shape
   label-laundering is refused; the orchestrator ceiling is **L4** (L5 barred). subctl + argentos now
-  read as `Orchestrator-L1` instead of false machine scores. Shape is **declared** via `--shape`;
-  auto-detection from source is deferred (parser work).
+  read as `Orchestrator-L1` instead of false machine scores.
+- **Auto shape-detection** (`kit score` now defaults to `--shape auto`): picks `machine` /
+  `orchestrator` from structural signals — Dumb Driver wins ties, orchestrator-only ⇒ orchestrator,
+  neither ⇒ machine → non-deployment. Repos with **both** signals are **flagged** ("declare --shape")
+  rather than guessed; explicit `--shape` overrides. Inherits the keystone heuristics' limits —
+  TS-AST-accurate detection + scoring (killing the `x.replace(ident)` / `while True:` type ambiguity)
+  is the **deferred parser phase**, which would require breaking the kit's stdlib-only floor.
 - **Deployment classifier** (`kit/score.py`): repos with no deterministic driver loop
   (Box 2 absent) return **NOT A MACHINE DEPLOYMENT** with a cited reason, instead of being
   floor-bumped to a meaningless L1. Catches the AAR signing library, the AVL web spec, and

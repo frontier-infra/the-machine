@@ -23,8 +23,8 @@ def main(argv: list[str] | None = None) -> int:
     sc.add_argument("repo")
     sc.add_argument("--name", default=None)
     sc.add_argument("--out", default=None)
-    sc.add_argument("--shape", choices=["machine", "orchestrator"], default="machine",
-                    help="deployment shape (default: machine; orchestrator = model-in-the-loop)")
+    sc.add_argument("--shape", choices=["auto", "machine", "orchestrator"], default="auto",
+                    help="deployment shape (default: auto-detect; machine = Dumb Driver, orchestrator = model-in-loop)")
     mx = sub.add_parser("matrix", help="Render the test matrix from obligations.py.")
     mx.add_argument("--out", default=None)
     args = p.parse_args(argv)
@@ -37,12 +37,15 @@ def main(argv: list[str] | None = None) -> int:
             return 1
         s = score_repo(args.repo, args.name, args.shape)
         text = render_packet(s)
+        det = ""
+        if s.get("detected_shape"):
+            det = f"  [auto: {s['detected_shape']}" + ("; orchestrator signals also present — declare --shape]" if s.get("ambiguous") else "]")
         if s.get("is_deployment", True):
             print(f"[{s['deployment']}] confirmed level: {s['confirmed_level_name']}  "
-                  f"(blockers to {s['next_level_name']}: {len(s['blockers'])}; not-run: {len(s['not_run'])})",
+                  f"(blockers to {s['next_level_name']}: {len(s['blockers'])}; not-run: {len(s['not_run'])}){det}",
                   file=sys.stderr)
         else:
-            print(f"[{s['deployment']}] {s['confirmed_level_name']} — {s['classification_reason']}",
+            print(f"[{s['deployment']}] {s['confirmed_level_name']} — {s['classification_reason']}{det}",
                   file=sys.stderr)
 
     if args.out:
