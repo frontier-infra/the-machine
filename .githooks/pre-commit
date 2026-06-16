@@ -1,0 +1,8 @@
+#!/bin/sh
+# Every commit updates CHANGELOG.md. ponytail: smallest gate that enforces it.
+if git diff --cached --name-only | grep -qx "CHANGELOG.md"; then
+  exit 0
+fi
+echo "commit blocked: CHANGELOG.md not staged." >&2
+echo "  add an entry under ## [Unreleased], then: git add CHANGELOG.md" >&2
+exit 1

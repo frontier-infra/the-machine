@@ -19,6 +19,8 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
+from .obligations import OBLIGATIONS
+
 SKIP_DIRS = {".git", "node_modules", "dist", "build", ".venv", "venv", "__pycache__", ".next"}
 # Evidence comes from what a deployment DOES (code + executable config), never from
 # what it SAYS about itself. Prose docs (.md/.txt) are where conformance is *claimed* —
@@ -60,7 +62,7 @@ class RepoView:
         rx = re.compile(pattern, re.IGNORECASE)
         out: list[tuple[str, int, str]] = []
         for p, lines in self._files.items():
-            if p.name == ".gitignore":          # ignore-config, not implementation
+            if p.name in _SKIP_FILES or p.suffix == ".lock":   # ignore-config + dep manifests/lockfiles — declarations, not implementation
                 continue
             if globs and not any(p.match(g) or p.name.endswith(g.lstrip("*")) for g in globs):
                 continue
@@ -75,11 +77,9 @@ class RepoView:
                     out.append((str(p.relative_to(self.root)), i, line.strip()))
         return out
 
-    def exists(self, *rel: str) -> bool:
-        return any((self.root / r).exists() for r in rel)
-
 
 _COMMENT_PREFIXES = ("#", "//", "*", '"""', "'''", "<!--", "/*", "---")
+_SKIP_FILES = {".gitignore", "package.json", "package-lock.json", "pnpm-lock.yaml", "yarn.lock"}
 
 
 def _is_comment(line: str) -> bool:
@@ -131,7 +131,10 @@ def box0_ratified(repo: RepoView) -> CheckResult:
 
 
 def box1_state(repo: RepoView) -> CheckResult:
-    atomic = _first(repo, [r"\.replace\(", r"os\.replace", r"checkpoint"])
+    # atomic rename incl. os.replace(var) + pathlib tmp.replace(dst); excludes x.replace(/regex/)
+    # (avl route-trim, argentos `os.replace(/.../)`). ponytail: can't tell Path.replace from
+    # str.replace(ident) without types — residual str-replace(ident) FPs are parser territory.
+    atomic = _first(repo, [r"\.replace\((?!/)", r"\brename(?:Sync)?\(", r"checkpoint"])
     store = _first(repo, [r"kanban_store", r"item_vault", r"goal\.json", r"\.tmp"])
     if atomic:
         return CheckResult("PASS", _cite(atomic))
@@ -302,8 +305,9 @@ def delta3_anomaly(repo: RepoView) -> CheckResult:
     return CheckResult("FAIL", "Δ3: no registered anomaly detectors")
 
 
-CHECKS = {
-    name: fn for name, fn in globals().items()
-    if callable(fn) and not name.startswith("_")
-    and name not in {"RepoView", "CheckResult"}
-}
+CHECKS = {o.id: globals()[o.id] for o in OBLIGATIONS if o.kind == "static"}
+
+
+if __name__ == "__main__":   # ponytail: smallest check that the registry stays complete
+    assert set(CHECKS) == {o.id for o in OBLIGATIONS if o.kind == "static"}
+    print("checks self-check OK")
