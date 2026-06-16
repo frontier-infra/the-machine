@@ -7,6 +7,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com); the kit is v0/unv
 ## [Unreleased]
 
 ### Added
+- **Orchestrator shape** (Δ7 · Council 5–0 · 2026-06-16): the kit scores two **shapes** — `machine`
+  (Dumb Driver) and `orchestrator` (model-in-the-loop). `kit score <repo> --shape orchestrator` scores
+  the **Orchestrator Keystone** (closed typed transitions · persist-before-effect · zero-token replay)
+  in place of Box 2. Scores stamp `Machine-L*` / `Orchestrator-L*` (never bare `L*`); cross-shape
+  label-laundering is refused; the orchestrator ceiling is **L4** (L5 barred). subctl + argentos now
+  read as `Orchestrator-L1` instead of false machine scores. Shape is **declared** via `--shape`;
+  auto-detection from source is deferred (parser work).
 - **Deployment classifier** (`kit/score.py`): repos with no deterministic driver loop
   (Box 2 absent) return **NOT A MACHINE DEPLOYMENT** with a cited reason, instead of being
   floor-bumped to a meaningless L1. Catches the AAR signing library, the AVL web spec, and
@@ -15,6 +22,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com); the kit is v0/unv
   on every commit.
 
 ### Changed
+- **Box 2 purity restored** (`THE-MACHINE.md`): deleted the "calibration / an LLM-orchestrated driver
+  is acceptable until observed mishandling" escape hatch. Box 2 is token-free, full stop;
+  model-in-the-loop is the `orchestrator` shape, not a calibrated Dumb Driver.
 - **Substring false-positive cleanup** in the evidence scan (`kit/checks.py`):
   - Exclude dependency manifests + lockfiles (`package.json`, `package-lock.json`,
     `pnpm-lock.yaml`, `yarn.lock`, `*.lock`) — dep/script names are declarations, not

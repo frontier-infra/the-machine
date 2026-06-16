@@ -27,6 +27,7 @@ class Obligation:
     kind: str        # "static" | "chaos"
     evidence: str    # what passing looks like (rendered into the matrix)
     vnext: bool = False
+    shape: str = "any"   # "any" (both shapes) | "machine" (Dumb Driver only) | "orchestrator" (model-in-loop)
 
 
 # Ordered roughly by level, then plane. Levels: 1 Declared · 2 Instrumented ·
@@ -40,7 +41,9 @@ OBLIGATIONS: list[Obligation] = [
     Obligation("box1_state", "Box 1 — Durable Goal + State (survives kill)", "box", 2, "static",
                "state persisted to a store with an atomic/checkpoint write"),
     Obligation("box2_driver", "Box 2 — Dumb Driver (deterministic control loop)", "box", 2, "static",
-               "a driver loop / deterministic engine, token-free in the loop"),
+               "a driver loop / deterministic engine, token-free in the loop", shape="machine"),
+    Obligation("orch_keystone", "Orchestrator Keystone (closed typed transitions · persist-before-effect · zero-token replay)", "box", 2, "static",
+               "model proposes a typed transition from a closed set; code persists the decision before effect; replay spends zero model tokens", shape="orchestrator"),
     Obligation("box3_workers", "Box 3 — Fresh Workers (one per move)", "box", 2, "static",
                "a fresh worker/process spawned per task"),
     Obligation("box4_verify", "Box 4 — Verify vs Reality (verifier ≠ subject, fail-closed)", "box", 3, "static",

@@ -23,6 +23,8 @@ def main(argv: list[str] | None = None) -> int:
     sc.add_argument("repo")
     sc.add_argument("--name", default=None)
     sc.add_argument("--out", default=None)
+    sc.add_argument("--shape", choices=["machine", "orchestrator"], default="machine",
+                    help="deployment shape (default: machine; orchestrator = model-in-the-loop)")
     mx = sub.add_parser("matrix", help="Render the test matrix from obligations.py.")
     mx.add_argument("--out", default=None)
     args = p.parse_args(argv)
@@ -33,14 +35,14 @@ def main(argv: list[str] | None = None) -> int:
         if not Path(args.repo).exists():
             print(f"[FAIL] repo not found: {args.repo}", file=sys.stderr)
             return 1
-        s = score_repo(args.repo, args.name)
+        s = score_repo(args.repo, args.name, args.shape)
         text = render_packet(s)
         if s.get("is_deployment", True):
             print(f"[{s['deployment']}] confirmed level: {s['confirmed_level_name']}  "
                   f"(blockers to {s['next_level_name']}: {len(s['blockers'])}; not-run: {len(s['not_run'])})",
                   file=sys.stderr)
         else:
-            print(f"[{s['deployment']}] NOT A MACHINE DEPLOYMENT — {s['classification_reason']}",
+            print(f"[{s['deployment']}] {s['confirmed_level_name']} — {s['classification_reason']}",
                   file=sys.stderr)
 
     if args.out:

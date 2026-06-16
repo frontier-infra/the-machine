@@ -298,6 +298,22 @@ def delta3_heartbeat(repo: RepoView) -> CheckResult:
     return CheckResult("PARTIAL", f"heartbeat field present; no independent staleness monitor — {_cite(h)}")
 
 
+def orch_keystone(repo: RepoView) -> CheckResult:
+    # The orchestrator's Box-2 replacement: closed/typed transition set + write-ahead decision
+    # persistence are the load-bearing pair (replay-zero-token is the chaos consequence). ponytail:
+    # structural grep — honest for Python; TS-accurate recognition is the deferred parser work.
+    transitions = _first(repo, [r"class \w*State\w*\(.*Enum", r"\bTRANSITIONS\b", r"transition_table",
+                                r"allowed_transitions", r"\bStateMachine\b", r"next_state"])
+    persist = _first(repo, [r"decision_log", r"write.?ahead", r"persist.*decision", r"\bjournal\b",
+                            r"append.*decision", r"record.*choice"])
+    if transitions and persist:
+        return CheckResult("PASS", _cite(persist))
+    half = transitions or persist
+    if half:
+        return CheckResult("PARTIAL", f"partial keystone — need closed transitions + write-ahead persist — {_cite(half)}")
+    return CheckResult("FAIL", "no orchestrator keystone (closed typed transitions + persist-before-effect)")
+
+
 def delta3_anomaly(repo: RepoView) -> CheckResult:
     h = _first(repo, [r"anomaly", r"rate.?spike", r"duplicate surge", r"detector", r"thermal"])
     if h:

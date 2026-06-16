@@ -59,9 +59,10 @@ the *same* move (counter+1). **Pass:** kill mid-move → restart resumes same `t
 
 ### Box 2 — Dumb Driver
 **Obligation:** the control loop spends **zero model tokens** — a deterministic function of (state,
-clock, events) → next dispatch. **Calibration:** token-free is the target; an LLM-orchestrated driver
-with a deterministic scheduler is acceptable until *observed* mishandling. *(Absorbs "Deterministic
-Control.")*
+clock, events) → next dispatch. Token-free is not a *target*, it is the obligation: a model in the
+control loop is a **different shape** (see *Shapes*), never a "calibrated" Dumb Driver. **Pass:** the
+loop dispatches / retries / routes / persists with no model call; replay is byte-identical.
+*(Absorbs "Deterministic Control.")*
 
 ### Box 3 — Fresh Workers
 **Obligation:** each move = a new session, bounded context reconstructable from durable state,
@@ -179,6 +180,27 @@ Channel) to the same core. Examples are **non-normative and non-exhaustive**. **
 grandfathered** — not ArgentOS, not WR2; all earn their level via the kit. *(Open thread: the conformance
 kit is owed a one-paragraph formal definition — inputs: harness + wiring; output: a level.)*
 
+### Shapes — `machine` vs `orchestrator`  *(Δ7, ratified 2026-06-16)*
+
+A deployment's **shape** is part of its stamp. Two are recognized; the kit scores against the shape's
+obligations and stamps the result **`Machine-L*` or `Orchestrator-L*` — never a bare `L*`**, so a
+model-driven system can never silently claim the dumb-driver guarantee. Cross-shape label-laundering
+(an orchestrator claiming Box 2) is a category error the kit refuses.
+
+- **`machine`** — the canonical shape: a **Dumb Driver** (Box 2, zero model tokens). All six boxes apply as written.
+- **`orchestrator`** — the model is *in* the control loop (it picks the next step). Box 2 is **replaced**
+  by the **Orchestrator Keystone**:
+  1. the model **proposes a typed transition from a closed, finite set** — it selects an edge, it cannot invent one;
+  2. deterministic code **validates**, **persists the decision before any effect commits** (write-ahead), then **executes**;
+  3. **replay reads the persisted decision log and spends zero model tokens** — re-invoking the model on replay is a **conformance FAILURE**, not a degraded pass.
+
+  This isolates and records the nondeterminism so replay / kill-safety / verifiability survive even
+  though a model chose the edge. An orchestrator is a **strictly smaller guarantee bundle** than a Dumb
+  Driver: it recovers replay/kill-safety *a-posteriori* from the recorded choice, forfeiting the Dumb
+  Driver's *a-priori* verifiability. **Ceiling:** an `orchestrator` may reach **L4 (Receipted)** but
+  **never L5 (Trusted Autonomy)**. *(Council minority: hard cap at L3; L4 is the standing dial, L3 if
+  maximum strictness is wanted.)*
+
 ## Conformance levels
 
 | L | Name | Meaning |
@@ -189,6 +211,8 @@ kit is owed a one-paragraph formal definition — inputs: harness + wiring; outp
 | 3 | Enforced | the system blocks, caps, alerts, escalates per contract |
 | 4 | Receipted | material actions produce signed AAR receipts + independent verification |
 | 5 | Trusted Autonomy | the dial may rise automatically on verifier-earned trust |
+
+_Levels are stamped by shape (`Machine-L*` / `Orchestrator-L*`). The `orchestrator` ceiling is **L4** — L5 is barred (see Shapes)._
 
 ## Evidence to CLAIM conformance (resemblance ≠ conformance)
 

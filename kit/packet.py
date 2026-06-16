@@ -22,8 +22,8 @@ def _render_non_deployment(s: dict) -> str:
     ladder does not apply, instead of floor-bumping to a meaningless L1."""
     out: list[str] = []
     out.append(f"# Conformance packet — {s['deployment']}")
-    out.append(f"_Kit {s['kit_version']} · static/structural · {_today()} · against {s['spec']}_\n")
-    out.append("## NOT A MACHINE DEPLOYMENT")
+    out.append(f"_Kit {s['kit_version']} · static/structural · {_today()} · shape: {s.get('shape', 'machine')} · against {s['spec']}_\n")
+    out.append(f"## {s['confirmed_level_name']}")
     out.append(f"> {s['classification_reason']}.")
     out.append("> The six-box ladder describes a long-running agent: durable state · a deterministic "
                "driver loop · fresh workers · verify-at-a-gate. A signing library, a web-protocol "
